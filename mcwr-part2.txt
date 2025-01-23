@@ -1,0 +1,120 @@
+// models/Attraction.php
+<?php
+class Attraction {
+    private $conn;
+    private $table_name = "attractions";
+
+    public $id;
+    public $facility_id;
+    public $name;
+    public $status;
+    public $created_at;
+
+    public function __construct($db) {
+        $this->conn = $db;
+    }
+
+    public function read() {
+        $query = "SELECT a.*, f.name as facility_name 
+                FROM " . $this->table_name . " a
+                LEFT JOIN facilities f ON a.facility_id = f.id
+                ORDER BY a.name";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt;
+    }
+
+    public function readByFacility($facility_id) {
+        $query = "SELECT * FROM " . $this->table_name . " 
+                WHERE facility_id = ? 
+                ORDER BY name";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $facility_id);
+        $stmt->execute();
+        return $stmt;
+    }
+
+    public function create() {
+        $query = "INSERT INTO " . $this->table_name . " 
+                SET 
+                    facility_id = :facility_id,
+                    name = :name,
+                    status = :status";
+        
+        $stmt = $this->conn->prepare($query);
+
+        $this->facility_id = htmlspecialchars(strip_tags($this->facility_id));
+        $this->name = htmlspecialchars(strip_tags($this->name));
+        $this->status = htmlspecialchars(strip_tags($this->status));
+
+        $stmt->bindParam(":facility_id", $this->facility_id);
+        $stmt->bindParam(":name", $this->name);
+        $stmt->bindParam(":status", $this->status);
+
+        if($stmt->execute()) {
+            return true;
+        }
+        return false;
+    }
+
+    public function update() {
+        $query = "UPDATE " . $this->table_name . "
+                SET 
+                    facility_id = :facility_id,
+                    name = :name,
+                    status = :status
+                WHERE id = :id";
+
+        $stmt = $this->conn->prepare($query);
+
+        $this->facility_id = htmlspecialchars(strip_tags($this->facility_id));
+        $this->name = htmlspecialchars(strip_tags($this->name));
+        $this->status = htmlspecialchars(strip_tags($this->status));
+        $this->id = htmlspecialchars(strip_tags($this->id));
+
+        $stmt->bindParam(':facility_id', $this->facility_id);
+        $stmt->bindParam(':name', $this->name);
+        $stmt->bindParam(':status', $this->status);
+        $stmt->bindParam(':id', $this->id);
+
+        if($stmt->execute()) {
+            return true;
+        }
+        return false;
+    }
+
+    public function delete() {
+        $query = "DELETE FROM " . $this->table_name . " WHERE id = ?";
+        $stmt = $this->conn->prepare($query);
+
+        $this->id = htmlspecialchars(strip_tags($this->id));
+        $stmt->bindParam(1, $this->id);
+
+        if($stmt->execute()) {
+            return true;
+        }
+        return false;
+    }
+}
+
+// models/Reservation.php
+<?php
+class Reservation {
+    private $conn;
+    private $table_name = "reservations";
+
+    public $id;
+    public $user_id;
+    public $facility_id;
+    public $start_time;
+    public $end_time;
+    public $number_of_people;
+    public $status;
+    public $created_at;
+
+    public function __construct($db) {
+        $this->conn = $db;
+    }
+
+    public function read() {
+        $query = "SELECT r.*, f.name as facility_

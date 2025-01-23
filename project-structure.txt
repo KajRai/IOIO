@@ -1,0 +1,81 @@
+mcwr/
+│
+├── config/
+│   ├── database.php
+│   └── config.php
+│
+├── models/
+│   ├── User.php
+│   ├── Facility.php
+│   ├── Attraction.php
+│   ├── Reservation.php
+│   ├── Schedule.php
+│   └── Maintenance.php
+│
+├── api/
+│   ├── auth/
+│   │   ├── login.php
+│   │   └── logout.php
+│   │
+│   ├── facility/
+│   │   ├── create.php
+│   │   ├── read.php
+│   │   ├── update.php
+│   │   └── delete.php
+│   │
+│   ├── reservation/
+│   │   ├── create.php
+│   │   ├── read.php
+│   │   ├── update.php
+│   │   └── delete.php
+│   │
+│   └── schedule/
+│       ├── create.php
+│       ├── read.php
+│       ├── update.php
+│       └── delete.php
+│
+├── views/
+│   ├── templates/
+│   │   ├── header.php
+│   │   ├── footer.php
+│   │   └── navigation.php
+│   │
+│   ├── auth/
+│   │   └── login.php
+│   │
+│   ├── facility/
+│   │   ├── list.php
+│   │   └── form.php
+│   │
+│   ├── reservation/
+│   │   ├── list.php
+│   │   └── form.php
+│   │
+│   └── schedule/
+│       ├── list.php
+│       └── form.php
+│
+├── assets/
+│   ├── css/
+│   │   ├── style.css
+│   │   └── custom.css
+│   │
+│   ├── js/
+│   │   ├── main.js
+│   │   ├── auth.js
+│   │   ├── facility.js
+│   │   ├── reservation.js
+│   │   └── schedule.js
+│   │
+│   └── img/
+│
+├── utils/
+│   ├── Auth.php
+│   └── Validator.php
+│
+├── sql/
+│   └── mcwr_db.sql
+│
+├── index.php
+└── README.md

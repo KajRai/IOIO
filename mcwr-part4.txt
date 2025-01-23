@@ -1,0 +1,147 @@
+// api/auth/login.php
+<?php
+header("Access-Control-Allow-Origin: *");
+header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Max-Age: 3600");
+header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+
+include_once '../../config/database.php';
+include_once '../../models/User.php';
+
+$database = new Database();
+$db = $database->getConnection();
+
+$user = new User($db);
+
+$data = json_decode(file_get_contents("php://input"));
+
+if(!empty($data->email) && !empty($data->password)) {
+    $result = $user->login($data->email, $data->password);
+    
+    if($result) {
+        session_start();
+        $_SESSION['user_id'] = $result['id'];
+        $_SESSION['user_role'] = $result['role'];
+        $_SESSION['user_name'] = $result['first_name'] . ' ' . $result['last_name'];
+        
+        http_response_code(200);
+        echo json_encode(array(
+            "status" => "success",
+            "message" => "Logowanie udane.",
+            "user" => array(
+                "id" => $result['id'],
+                "name" => $result['first_name'] . ' ' . $result['last_name'],
+                "role" => $result['role']
+            )
+        ));
+    } else {
+        http_response_code(401);
+        echo json_encode(array(
+            "status" => "error",
+            "message" => "Nieprawidłowy email lub hasło."
+        ));
+    }
+} else {
+    http_response_code(400);
+    echo json_encode(array(
+        "status" => "error",
+        "message" => "Brak wymaganych danych."
+    ));
+}
+
+// api/auth/logout.php
+<?php
+session_start();
+session_destroy();
+
+header("Location: ../../views/auth/login.php");
+exit();
+
+// api/reservation/create.php
+<?php
+header("Access-Control-Allow-Origin: *");
+header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Max-Age: 3600");
+header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+
+include_once '../../config/database.php';
+include_once '../../models/Reservation.php';
+include_once '../../utils/Auth.php';
+
+// Check if user is logged in
+Auth::requireLogin();
+
+$database = new Database();
+$db = $database->getConnection();
+
+$reservation = new Reservation($db);
+
+$data = json_decode(file_get_contents("php://input"));
+
+if(
+    !empty($data->facility_id) &&
+    !empty($data->start_time) &&
+    !empty($data->end_time) &&
+    !empty($data->number_of_people)
+) {
+    $reservation->facility_id = $data->facility_id;
+    $reservation->user_id = $_SESSION['user_id'];
+    $reservation->start_time = $data->start_time;
+    $reservation->end_time = $data->end_time;
+    $reservation->number_of_people = $data->number_of_people;
+    $reservation->status = "pending";
+
+    $reservation_id = $reservation->create();
+    
+    if($reservation_id) {
+        // If attractions were selected, add them
+        if(!empty($data->attractions)) {
+            $reservation->addAttractions($reservation_id, $data->attractions);
+        }
+
+        http_response_code(201);
+        echo json_encode(array(
+            "status" => "success",
+            "message" => "Rezerwacja została utworzona.",
+            "id" => $reservation_id
+        ));
+    } else {
+        http_response_code(503);
+        echo json_encode(array(
+            "status" => "error",
+            "message" => "Nie udało się utworzyć rezerwacji."
+        ));
+    }
+} else {
+    http_response_code(400);
+    echo json_encode(array(
+        "status" => "error",
+        "message" => "Brak wymaganych danych."
+    ));
+}
+
+// api/reservation/read.php
+<?php
+header("Access-Control-Allow-Origin: *");
+header("Content-Type: application/json; charset=UTF-8");
+
+include_once '../../config/database.php';
+include_once '../../models/Reservation.php';
+include_once '../../utils/Auth.php';
+
+Auth::requireLogin();
+
+$database = new Database();
+$db = $database->getConnection();
+
+$reservation = new Reservation($db);
+$stmt = $reservation->read();
+$num = $stmt->rowCount();
+
+if($num > 0) {
+    $reservations_arr = array();
+    $reservations_arr["records"] = array();
+
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC

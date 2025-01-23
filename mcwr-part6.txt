@@ -1,0 +1,87 @@
+// assets/js/reservation.js
+$(document).ready(function() {
+    loadReservations();
+    loadFacilities();
+
+    // Set minimum date for reservation
+    const today = new Date().toISOString().split('T')[0];
+    $('#reservationDate').attr('min', today);
+
+    // Handle new reservation
+    $('#saveReservation').click(function() {
+        const facilityId = $('#facilitySelect').val();
+        const date = $('#reservationDate').val();
+        const startTime = $('#startTime').val();
+        const endTime = $('#endTime').val();
+        const numberOfPeople = $('#numberOfPeople').val();
+
+        if (!facilityId || !date || !startTime || !endTime || !numberOfPeople) {
+            showAlert('danger', 'Wypełnij wszystkie wymagane pola.');
+            return;
+        }
+
+        const startDateTime = `${date} ${startTime}:00`;
+        const endDateTime = `${date} ${endTime}:00`;
+
+        const reservationData = {
+            facility_id: facilityId,
+            start_time: startDateTime,
+            end_time: endDateTime,
+            number_of_people: numberOfPeople
+        };
+
+        $.ajax({
+            url: SITE_URL + '/api/reservation/create.php',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(reservationData),
+            success: function(response) {
+                if (response.status === 'success') {
+                    $('#reservationModal').modal('hide');
+                    showAlert('success', 'Rezerwacja została utworzona.');
+                    loadReservations();
+                } else {
+                    showAlert('danger', response.message);
+                }
+            },
+            error: function(xhr) {
+                showAlert('danger', 'Wystąpił błąd podczas tworzenia rezerwacji.');
+            }
+        });
+    });
+
+    function loadReservations() {
+        $.ajax({
+            url: SITE_URL + '/api/reservation/read.php',
+            type: 'GET',
+            success: function(response) {
+                if (response.records) {
+                    displayReservations(response.records);
+                }
+            },
+            error: function() {
+                showAlert('danger', 'Nie udało się załadować rezerwacji.');
+            }
+        });
+    }
+
+    function displayReservations(reservations) {
+        const tbody = $('#reservationsTable tbody');
+        tbody.empty();
+
+        reservations.forEach(function(reservation) {
+            const startDate = new Date(reservation.start_time);
+            const endDate = new Date(reservation.end_time);
+
+            const row = `
+                <tr>
+                    <td>${formatDateTime(startDate)}</td>
+                    <td>${reservation.client_name}</td>
+                    <td>${reservation.facility_name}</td>
+                    <td>${reservation.number_of_people}</td>
+                    <td>${translateStatus(reservation.status)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editReservation(${reservation.id})">
+                            Edytuj
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteReservation(${reservation
